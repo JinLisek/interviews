@@ -1,0 +1,7 @@
+strictness: veryhigh
+doc-warnings: false
+max-line-length: 88
+
+pylint:
+  disable:
+    - too-few-public-methods
