@@ -146,6 +146,6 @@ def test_when_no_resolver_given_for_lookup_signal_should_raise_an_error():
     missing_signal = "ComplexMissingSignalName42"
 
     with pytest.raises(MissingResolverError) as err:
-        engine.resolve(lookup_signal=missing_signal, known_signals={"A": 10})
+        engine.resolve(lookup_signal=missing_signal, known_signals={})
 
     assert missing_signal in str(err)
