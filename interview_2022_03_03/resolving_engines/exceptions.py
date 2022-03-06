@@ -1,0 +1,2 @@
+class MissingResolverError(Exception):
+    pass
