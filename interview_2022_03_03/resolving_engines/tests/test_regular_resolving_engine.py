@@ -60,15 +60,15 @@ class DoubleAndHalfAResolverStub(Resolver):
         return {"DoubleA": known_signals["A"] * 2, "HalfA": known_signals["A"] // 2}
 
 
-class XIsAYIsBResolverStub(Resolver):
+class CopyAAndBResolverStub(Resolver):
     def get_input_signals(self) -> Signals:
         return ["A", "B"]
 
     def get_output_signals(self) -> Signals:
-        return ["X", "Y"]
+        return ["ACopy", "BCopy"]
 
     def run(self, known_signals: CalculatedSignals) -> CalculatedSignals:
-        return {"X": known_signals["A"], "Y": known_signals["B"]}
+        return {"ACopy": known_signals["A"], "BCopy": known_signals["B"]}
 
 
 def test_given_lookup_in_known_signals_should_return_known_signals():
@@ -122,18 +122,21 @@ def test_given_resolver_requiring_single_input_should_calculate_multiple_outputs
     )
 
 
-def test_given_resolver_requiring_multiple_input_should_calculate_multiple_outputs():
+@pytest.mark.parametrize(("lookup_signal"), (["ACopy", "BCopy"]))
+def test_given_resolver_requiring_multiple_input_should_calculate_multiple_outputs(
+    lookup_signal,
+):
     engine = RegularResolvingEngine()
 
-    engine.register_resolver(resolver=XIsAYIsBResolverStub())
+    engine.register_resolver(resolver=CopyAAndBResolverStub())
 
     a_value = 49
     b_value = 51
 
     input_signals = {"A": a_value, "B": b_value}
 
-    assert {**input_signals, "X": a_value, "Y": b_value} == engine.resolve(
-        lookup_signal="X", known_signals=input_signals
+    assert {**input_signals, "ACopy": a_value, "BCopy": b_value} == engine.resolve(
+        lookup_signal=lookup_signal, known_signals=input_signals
     )
 
 
