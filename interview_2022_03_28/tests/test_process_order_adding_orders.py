@@ -128,24 +128,6 @@ def test_order_with_duplicated_id_should_not_be_added_to_database(order_book, da
     assert len(database.fetch_orders()) == 1
 
 
-def test_trying_to_add_order_with_size_zero_should_log_error(order_book, capsys):
-    order_id = "aaa"
-    process_order(order_book=order_book, order=f"123|{order_id}|a|ZZZZ|B|7.77777|0")
-
-    error_regex = re.compile(f"ERROR.*{order_id}")
-    assert error_regex.match(capsys.readouterr().err)
-
-
-def test_trying_to_add_order_with_incorrect_side_should_log_error(order_book, capsys):
-    invalid_side = "XYZ"
-    process_order(
-        order_book=order_book, order=f"123|a42|a|ZZZZ|{invalid_side}|7.77777|1"
-    )
-
-    error_regex = re.compile(f"ERROR.*{invalid_side}")
-    assert error_regex.match(capsys.readouterr().err)
-
-
 def test_trying_to_add_order_with_duplicated_id_should_log_error(order_book, capsys):
     duplicated_id = "aabb1"
 
