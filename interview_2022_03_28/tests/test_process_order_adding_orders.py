@@ -113,14 +113,6 @@ def test_order_with_size_zero_should_not_be_added_to_database(order_book, databa
     assert database.fetch_orders() == []
 
 
-def test_order_with_incorrect_side_should_not_be_added_to_database(
-    order_book, database
-):
-    process_order(order_book=order_book, order="123|a42|a|ZZZZ|X|7.77777|1")
-
-    assert database.fetch_orders() == []
-
-
 def test_order_with_duplicated_id_should_not_be_added_to_database(order_book, database):
     process_order(order_book=order_book, order="124|z42|a|ZZZY|B|8.88888|2")
     process_order(order_book=order_book, order="123|z42|a|ZZZZ|S|7.77777|1")
