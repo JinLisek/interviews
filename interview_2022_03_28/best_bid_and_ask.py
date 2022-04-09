@@ -1,13 +1,13 @@
 from typing import Dict
 
-from .order_book import DatabaseOrderBook
+from .best_bid_and_ask_view import BestBidAndAskView
 
 Ticker = str
 Price = float
 
 
 def get_best_bid_and_ask(
-    order_book: DatabaseOrderBook, ticker: Ticker
+    order_book: BestBidAndAskView, ticker: Ticker
 ) -> Dict[Ticker, Price]:
     return {
         "best_ask": order_book.get_best_ask(ticker=ticker),

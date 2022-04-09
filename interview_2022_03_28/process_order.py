@@ -1,6 +1,6 @@
 from .logger import log_err
 from .order import Order, OrderType
-from .order_book import DatabaseOrderBook, OrderBookError
+from .order_book import OrderBookError, OrderBookProcessor
 from .validator_factory import (
     create_action_validator,
     create_add_validator,
@@ -14,7 +14,7 @@ UPDATE_VALIDATOR = create_update_validator()
 ADD_VALIDATOR = create_add_validator()
 
 
-def process_order(order_book: DatabaseOrderBook, order: str) -> None:
+def process_order(order_book: OrderBookProcessor, order: str) -> None:
     if not ACTION_VALIDATOR.is_valid(order=order):
         return
 
@@ -31,7 +31,7 @@ def process_order(order_book: DatabaseOrderBook, order: str) -> None:
         _handle_add_action(order_book=order_book, order=order)
 
 
-def _handle_cancel_action(order_book: DatabaseOrderBook, order: str) -> None:
+def _handle_cancel_action(order_book: OrderBookProcessor, order: str) -> None:
     if not CANCEL_VALIDATOR.is_valid(order=order):
         return
 
@@ -44,7 +44,7 @@ def _handle_cancel_action(order_book: DatabaseOrderBook, order: str) -> None:
         log_err("ERROR: " + str(err))
 
 
-def _handle_update_action(order_book: DatabaseOrderBook, order: str) -> None:
+def _handle_update_action(order_book: OrderBookProcessor, order: str) -> None:
     if not UPDATE_VALIDATOR.is_valid(order=order):
         return
 
@@ -58,7 +58,7 @@ def _handle_update_action(order_book: DatabaseOrderBook, order: str) -> None:
         log_err("ERROR: " + str(err))
 
 
-def _handle_add_action(order_book: DatabaseOrderBook, order: str) -> None:
+def _handle_add_action(order_book: OrderBookProcessor, order: str) -> None:
     if not ADD_VALIDATOR.is_valid(order=order):
         return
 

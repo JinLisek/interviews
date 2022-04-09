@@ -1,7 +1,7 @@
 import pytest
 
 from ..concrete_order_database import ConcreteOrderDatabase
-from ..order_book import DatabaseOrderBook
+from ..database_order_book import DatabaseOrderBook
 
 
 @pytest.fixture(name="database")

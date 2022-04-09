@@ -1,8 +1,8 @@
 import pytest
 
 from ..concrete_order_database import ConcreteOrderDatabase
+from ..database_order_book import DatabaseOrderBook, DuplicatedOrderIdError
 from ..order import Order
-from ..order_book import DatabaseOrderBook, DuplicatedOrderIdError
 
 
 @pytest.fixture(name="temporary_database")
