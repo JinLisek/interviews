@@ -1,7 +1,6 @@
 import re
 
-from interview_2022_03_28.utility.logger import log_err
-from interview_2022_03_28.utility.metaclasses import AbstractSingletonMeta
+from interview_2022_03_28.utility import AbstractSingletonMeta, log_err
 
 from .order_validator import OrderValidator
 

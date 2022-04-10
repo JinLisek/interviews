@@ -1,8 +1,8 @@
-from interview_2022_03_28 import validators
+from interview_2022_03_28.utility import log_err
 
+from . import validators
 from .order import Order, OrderType
 from .order_book import OrderBookError, OrderBookProcessor
-from .utility.logger import log_err
 
 ACTION_VALIDATOR = validators.create_action_validator()
 CANCEL_VALIDATOR = validators.create_cancel_validator()
