@@ -1,4 +1,5 @@
 from .best_bid_and_ask import get_best_bid_and_ask
+from .best_bid_and_ask_view import BestBidAndAskView
 from .order_book import OrderBookProcessor
 from .order_book_factory import create_order_database, create_order_storage
 from .order_storage import OrderStorage
@@ -11,4 +12,5 @@ __all__ = [
     "create_order_storage",
     "OrderBookProcessor",
     "OrderStorage",
+    "BestBidAndAskView",
 ]
