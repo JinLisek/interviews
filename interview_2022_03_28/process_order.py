@@ -1,17 +1,13 @@
-from .logger import log_err
+from interview_2022_03_28 import validators
+
 from .order import Order, OrderType
 from .order_book import OrderBookError, OrderBookProcessor
-from .validator_factory import (
-    create_action_validator,
-    create_add_validator,
-    create_cancel_validator,
-    create_update_validator,
-)
+from .utility.logger import log_err
 
-ACTION_VALIDATOR = create_action_validator()
-CANCEL_VALIDATOR = create_cancel_validator()
-UPDATE_VALIDATOR = create_update_validator()
-ADD_VALIDATOR = create_add_validator()
+ACTION_VALIDATOR = validators.create_action_validator()
+CANCEL_VALIDATOR = validators.create_cancel_validator()
+UPDATE_VALIDATOR = validators.create_update_validator()
+ADD_VALIDATOR = validators.create_add_validator()
 
 
 def process_order(order_book: OrderBookProcessor, order: str) -> None:

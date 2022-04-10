@@ -1,12 +1,12 @@
-from .validators import (
+from ._concrete_validators import (
     ActionValidator,
     NumOfOrderFieldsValidator,
     OrderIdValidator,
-    OrderValidator,
     SideValidator,
     SizeValidator,
     TimestampValidator,
 )
+from .order_validator import OrderValidator
 
 
 def create_action_validator() -> OrderValidator:

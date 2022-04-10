@@ -1,20 +1,9 @@
-from __future__ import annotations
-
 import re
-from abc import ABC, abstractmethod
 
-from .abstract_singleton_meta import AbstractSingletonMeta
-from .logger import log_err
+from interview_2022_03_28.utility.logger import log_err
+from interview_2022_03_28.utility.metaclasses import AbstractSingletonMeta
 
-
-class OrderValidator(ABC):
-    @abstractmethod
-    def is_valid(self, order: str) -> bool:
-        pass
-
-    @abstractmethod
-    def set_next(self, validator: OrderValidator) -> OrderValidator:
-        pass
+from .order_validator import OrderValidator
 
 
 class NullOrderValidator(OrderValidator, metaclass=AbstractSingletonMeta):
