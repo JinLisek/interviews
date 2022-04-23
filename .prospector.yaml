@@ -1,6 +1,6 @@
 strictness: veryhigh
 doc-warnings: false
-max-line-length: 88
+max-line-length: 120
 
 pylint:
   disable:
@@ -8,3 +8,7 @@ pylint:
     - missing-module-docstring
     - missing-class-docstring
     - missing-function-docstring
+
+pep8:
+  disable:
+    - E501
