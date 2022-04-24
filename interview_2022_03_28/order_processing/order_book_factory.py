@@ -1,13 +1,14 @@
 from .concrete_order_database import ConcreteOrderDatabase
-from .order_database import OrderDatabase
+from .database_order_storage import DatabaseOrderStorage
 from .order_storage import OrderStorage
-
-from .concrete_order_storage import ConcreteOrderStorage
-
-
-def create_order_database(name: str) -> OrderDatabase:
-    return ConcreteOrderDatabase(database_name=name)
+from .tree_order_storage import TreeOrderStorage
 
 
-def create_order_storage(database: OrderDatabase) -> OrderStorage:
-    return ConcreteOrderStorage(database=database)
+def create_db_order_storage() -> OrderStorage:
+    return DatabaseOrderStorage(
+        database=ConcreteOrderDatabase(database_name=":memory:")
+    )
+
+
+def create_tree_order_storage() -> OrderStorage:
+    return TreeOrderStorage()

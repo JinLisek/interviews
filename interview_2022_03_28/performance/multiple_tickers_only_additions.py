@@ -13,8 +13,8 @@ def multiple_tickers_only_additions() -> None:
         updates=0,
         cancels=0,
     )
-    order_database = order_processing.create_order_database(name=":memory:")
-    order_storage = order_processing.create_order_storage(database=order_database)
+
+    order_storage = order_processing.create_db_order_storage()
     order_processor = order_storage.get_processor()
     side_selector = SideSelector()
     ticker_selector = TickerSelector()

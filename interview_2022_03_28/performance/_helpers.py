@@ -57,8 +57,8 @@ class SideSelector:
 
 
 class TickerSelector:
-    def __init__(self) -> None:
-        self.__tickers = generate_tickers(num_of_tickers=2000)
+    def __init__(self, num_of_tickers) -> None:
+        self.__tickers = generate_tickers(num_of_tickers=num_of_tickers)
         self.__iterator = itertools.cycle(self.__tickers)
 
     def __call__(self) -> str:
@@ -99,12 +99,19 @@ def generate_tickers(num_of_tickers: int) -> List[str]:
 
 def describe_test(name: str, additions: int, updates: int, cancels: int) -> None:
     print(f"Running test: {name}")
-    print(f"Number of additions: {additions}")
-    print(f"Number of updates: {updates}")
-    print(f"Number of cancels: {cancels}")
+    print(f"Number of additions: {format_int(additions)}")
+    print(f"Number of updates: {format_int(updates)}")
+    print(f"Number of cancels: {format_int(cancels)}")
 
 
-def describe_price_test(name: str, price_api_calls: int, orders: int) -> None:
+def describe_price_test(
+    name: str, price_api_calls: int, orders: int, num_of_tickers: int
+) -> None:
     print(f"Running test: {name}")
-    print(f"Number of prepared orders: {orders}")
-    print(f"Number of best bid/ask calls: {price_api_calls}")
+    print(f"Number of prepared orders: {format_int(orders)}")
+    print(f"Number of best bid/ask calls: {format_int(price_api_calls)}")
+    print(f"Number of tickers: {format_int(num_of_tickers)}")
+
+
+def format_int(val: int) -> str:
+    return f"{val:,}".replace(",", " ")

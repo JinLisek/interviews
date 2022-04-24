@@ -13,8 +13,7 @@ def single_ticker_additions_updates_cancels() -> None:
         updates=OPERATIONS,
         cancels=OPERATIONS,
     )
-    order_database = order_processing.create_order_database(name=":memory:")
-    order_storage = order_processing.create_order_storage(database=order_database)
+    order_storage = order_processing.create_db_order_storage()
     order_processor = order_storage.get_processor()
     side_selector = SideSelector()
 

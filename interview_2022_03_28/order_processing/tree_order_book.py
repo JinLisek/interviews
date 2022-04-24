@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 import math
-from typing import Dict
+from enum import Enum, auto, unique
+from typing import Dict, Optional
 
 from .best_bid_and_ask_view import BestBidAndAskView
 from .order import Order, OrderType
@@ -18,12 +21,18 @@ class DuplicatedOrderIdError(OrderBookError):
     pass
 
 
+@unique
+class NodeColor(Enum):
+    RED = auto()
+    BLACK = auto()
+
+
 class RedBlackNode:
-    def __init__(self, order: Order) -> None:
-        self.red = False
-        self.parent = None
-        self.left = None
-        self.right = None
+    def __init__(self, order: Order, parent: Optional[RedBlackNode]) -> None:
+        self.color: NodeColor = NodeColor.RED
+        self.parent: Optional[RedBlackNode] = parent
+        self.left: Optional[RedBlackNode] = None
+        self.right: Optional[RedBlackNode] = None
         self.price = order.price
 
         self.orders = {}
@@ -32,31 +41,80 @@ class RedBlackNode:
 
 class RedBlackTree:
     def __init__(self) -> None:
-        self.root = None
+        self.root: Optional[RedBlackNode] = None
 
     def insert(self, order: Order) -> None:
-        new_node = RedBlackNode(order=order)
-        new_node.red = True
-
-        parent = None
+        parent: Optional[RedBlackNode] = None
         current = self.root
+
+        # find parent for new node
         while current is not None:
             parent = current
-            if new_node.price < current.price:
+            if order.price < current.price:
                 current = current.left
-            elif new_node.price > current.price:
+            elif order.price > current.price:
                 current = current.right
             else:
                 current.orders[order.order_id] = order
                 return
 
-        new_node.parent = parent
+        current_node = RedBlackNode(order=order, parent=parent)
+
         if parent is None:
-            self.root = new_node
-        elif new_node.price < parent.price:
-            parent.left = new_node
-        else:
-            parent.right = new_node
+            self.root = current_node
+            return
+
+        # set new node as child to the parent
+        while parent is not None:
+            if current_node.price < parent.price:
+                parent.left = current_node
+            else:
+                parent.right = current_node
+
+            # loop?
+            if parent.color == NodeColor.BLACK:
+                # insertion case 1: parent is black
+                return
+
+            grandparent = parent.parent
+
+            if grandparent is None:
+                # insertion case 4: parent is red and root
+                parent.color = NodeColor.BLACK
+                return
+
+            uncle = find_brother(node=parent)
+            if uncle is None or uncle.color == NodeColor.BLACK:
+                # insertion case 5 and 6: parent is red, uncle is black
+                if uncle is grandparent.right and current_node is parent.right:
+                    # insertion case 5: parent is red, uncle is black, current_node is right inner grandchild of grandparent
+                    self.__rotate_left(parent=parent)
+                    current_node = parent
+                    parent = grandparent.left
+                elif uncle is grandparent.left and current_node is parent.left:
+                    # insertion case 5: parent is red, uncle is black, current_node is left inner grandchild of grandparent
+                    self.__rotate_right(parent=parent)
+                    current_node = parent
+                    parent = grandparent.right
+
+                # insertion case 6: parent is red, uncle is black, current_node is outer grandchild of grandparent
+                if uncle is grandparent.right:
+                    self.__rotate_right(parent=grandparent)
+                else:
+                    self.__rotate_left(parent=grandparent)
+                parent.color = NodeColor.BLACK
+                grandparent.color = NodeColor.RED
+
+                return
+
+            # insertion case 2: parent is red, uncle is red
+            parent.color = NodeColor.BLACK
+            uncle.color = NodeColor.BLACK
+            grandparent.color = NodeColor.RED
+            current_node = grandparent
+            parent = current_node.parent
+
+        # insertion case 3: current_node is root and red
 
     def update(self, order: Order) -> None:
         node_to_remove = find(root=self.root, price=order.price)
@@ -124,6 +182,58 @@ class RedBlackTree:
         if child is not None:
             child.parent = parent.parent
 
+    def __rotate_left(self, parent: RedBlackNode) -> RedBlackNode:
+        grandparent = parent.parent
+        new_subtree_root = parent.right
+        if new_subtree_root is None:
+            raise RuntimeError("NEW SUBTREE ROOT SHOULD BE TRUE NODE")
+
+        child = new_subtree_root.left
+
+        parent.right = child
+        if child is not None:
+            child.parent = parent
+
+        new_subtree_root.left = parent
+        parent.parent = new_subtree_root
+        new_subtree_root.parent = grandparent
+
+        if grandparent is not None:
+            if grandparent.left is parent:
+                grandparent.left = new_subtree_root
+            else:
+                grandparent.right = new_subtree_root
+        else:
+            self.root = new_subtree_root
+
+        return new_subtree_root
+
+    def __rotate_right(self, parent: RedBlackNode) -> RedBlackNode:
+        grandparent = parent.parent
+        new_subtree_root = parent.left
+        if new_subtree_root is None:
+            raise RuntimeError("NEW SUBTREE ROOT SHOULD BE TRUE NODE")
+
+        child = new_subtree_root.right
+
+        parent.left = child
+        if child is not None:
+            child.parent = parent
+
+        new_subtree_root.right = parent
+        parent.parent = new_subtree_root
+        new_subtree_root.parent = grandparent
+
+        if grandparent is not None:
+            if grandparent.right is parent:
+                grandparent.right = new_subtree_root
+            else:
+                grandparent.left = new_subtree_root
+        else:
+            self.root = new_subtree_root
+
+        return new_subtree_root
+
 
 def find(root, price: float) -> RedBlackNode:
     if root is None or math.isclose(root.price, price):
@@ -133,6 +243,14 @@ def find(root, price: float) -> RedBlackNode:
         return find(root=root.right, price=price)
 
     return find(root=root.left, price=price)
+
+
+def find_brother(node) -> RedBlackNode:
+    if node is None or node.parent is None:
+        return None
+
+    parent = node.parent
+    return parent.left if node is parent.right else parent.right
 
 
 def minimal_node(root) -> RedBlackNode:
@@ -155,6 +273,18 @@ def maximal_node(root) -> RedBlackNode:
         current = current.right
 
     return current
+
+
+def print_tree(root: RedBlackNode, level=0):
+    if root is not None:
+        print_tree(root.left, level + 1)
+        print(
+            "-" * 4 * level
+            + ">"
+            + str(root.price)
+            + ("R" if root.color == NodeColor.RED else "B")
+        )
+        print_tree(root.right, level + 1)
 
 
 TickerToOrders = Dict[str, Dict[str, RedBlackTree]]
