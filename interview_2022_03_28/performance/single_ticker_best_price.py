@@ -13,6 +13,8 @@ if __name__ == "__main__":
         num_of_tickers=NUM_OF_TICKERS,
     )
 
+    print("=" * 200)
+
     run_best_price_api_scenario(
         description_suffix="RedBlackTree",
         storage=order_processing.create_tree_order_storage(),
