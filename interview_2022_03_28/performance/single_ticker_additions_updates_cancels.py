@@ -1,30 +1,26 @@
 from interview_2022_03_28 import order_processing
 
-from ._check_perf import check_perf
-from ._helpers import SideSelector, add_order, cancel_order, describe_test, update_order
+from .scenarios.modification_procesures_scenario import (
+    run_modification_procesures_scenario,
+)
 
-OPERATIONS = 150_000
-
-
-def single_ticker_additions_updates_cancels() -> None:
-    describe_test(
-        name="single_ticker_additions_updates_cancels",
-        additions=OPERATIONS,
-        updates=OPERATIONS,
-        cancels=OPERATIONS,
-    )
-    order_storage = order_processing.create_db_order_storage()
-    order_processor = order_storage.get_processor()
-    side_selector = SideSelector()
-
-    with check_perf():
-        for idx in range(OPERATIONS):
-            add_order(
-                processor=order_processor, idx=idx, side=side_selector(), ticker="AAPL"
-            )
-            update_order(processor=order_processor, idx=idx)
-            cancel_order(processor=order_processor, idx=idx)
-
+NUM_OF_TICKERS = 1
 
 if __name__ == "__main__":
-    single_ticker_additions_updates_cancels()
+    run_modification_procesures_scenario(
+        test_name="Database - additions & updates & cancels, single ticker",
+        storage=order_processing.create_db_order_storage(),
+        num_of_additions=100_000,
+        num_of_updates=100_000,
+        num_of_cancels=100_000,
+        num_of_tickers=NUM_OF_TICKERS,
+    )
+
+    run_modification_procesures_scenario(
+        test_name="RedBlackTree - additions & updates & cancels, single ticker",
+        storage=order_processing.create_tree_order_storage(),
+        num_of_additions=100_000,
+        num_of_updates=100_000,
+        num_of_cancels=100_000,
+        num_of_tickers=NUM_OF_TICKERS,
+    )

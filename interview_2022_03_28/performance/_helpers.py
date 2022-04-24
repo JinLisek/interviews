@@ -74,7 +74,8 @@ class IdGenerator:
 
 
 def random_price() -> float:
-    return random.uniform(1.0, 99.9)
+    price = random.uniform(1.0, 99.9)
+    return round(price, ndigits=5)
 
 
 def random_add_size() -> int:
@@ -97,11 +98,14 @@ def generate_tickers(num_of_tickers: int) -> List[str]:
     return [hex(idx)[2:] for idx in range(num_of_tickers)]
 
 
-def describe_test(name: str, additions: int, updates: int, cancels: int) -> None:
+def describe_test(
+    name: str, additions: int, updates: int, cancels: int, num_of_tickers: int
+) -> None:
     print(f"Running test: {name}")
     print(f"Number of additions: {format_int(additions)}")
     print(f"Number of updates: {format_int(updates)}")
     print(f"Number of cancels: {format_int(cancels)}")
+    print(f"Number of tickers: {format_int(num_of_tickers)}")
 
 
 def describe_price_test(

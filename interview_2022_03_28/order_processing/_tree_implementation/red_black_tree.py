@@ -103,11 +103,16 @@ class RedBlackTree:
         # insertion case 3: current_node is root and red
 
     def update(self, order: Order) -> None:
-        node_to_remove = find(node=self.root, price=order.price)
-        if node_to_remove is None:
+        node_to_update = find(node=self.root, price=order.price)
+        if node_to_update is None:
             raise RuntimeError(f"BLAX NODE NOT FOUND TO UPDATE price {order.price}")
 
-        node_to_remove.orders[order.order_id].size = order.size
+        if order.order_id not in node_to_update.orders:
+            raise RuntimeError(
+                f"BLAX order id: {order.order_id} not found in orders for node with price {order.price}, orders: {node_to_update.orders}"
+            )
+
+        node_to_update.orders[order.order_id].size = order.size
 
     def delete(self, order: Order) -> None:
         # current_node = find(node=self.root, price=order.price)
