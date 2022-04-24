@@ -1,13 +1,24 @@
+from __future__ import annotations
+
+import math
+from enum import Enum, auto, unique
+from typing import Optional
+
 from ..order import Order
 
 
-class Node:
-    def __init__(self, order: Order):
-        self.parent = None
-        self.left = None
-        self.right = None
-        self.color = 1
+@unique
+class NodeColor(Enum):
+    RED = auto()
+    BLACK = auto()
 
+
+class RedBlackNode:
+    def __init__(self, order: Order, parent: Optional[RedBlackNode]) -> None:
+        self.color: NodeColor = NodeColor.RED
+        self.parent: Optional[RedBlackNode] = parent
+        self.left: Optional[RedBlackNode] = None
+        self.right: Optional[RedBlackNode] = None
         self.price = order.price
 
         self.orders = {}
@@ -15,220 +26,201 @@ class Node:
 
 
 class RedBlackTree:
-    def __init__(self):
-        self.root = None
+    def __init__(self) -> None:
+        self.root: Optional[RedBlackNode] = None
 
-    # Preorder
-    def pre_order_helper(self, node):
-        if node is not None:
-            print(node.price + " ")
-            self.pre_order_helper(node.left)
-            self.pre_order_helper(node.right)
+    def insert(self, order: Order) -> None:
+        parent: Optional[RedBlackNode] = None
+        current = self.root
 
-    # Inorder
-    def in_order_helper(self, node):
-        if node is not None:
-            self.in_order_helper(node.left)
-            print(node.price + " ")
-            self.in_order_helper(node.right)
-
-    # Postorder
-    def post_order_helper(self, node):
-        if node is not None:
-            self.post_order_helper(node.left)
-            self.post_order_helper(node.right)
-            print(node.price + " ")
-
-    # Search the tree
-    def search_tree_helper(self, node, price):
-        if node is None or price == node.price:
-            return node
-
-        if price < node.price:
-            return self.search_tree_helper(node.left, price)
-        return self.search_tree_helper(node.right, price)
-
-    # Balancing the tree after deletion
-    def delete_fix(self, x):
-        while x != self.root and x is not None and x.color == 0:
-            if x == x.parent.left:
-                s = x.parent.right
-                if s.color == 1:
-                    s.color = 0
-                    x.parent.color = 1
-                    self.left_rotate(x.parent)
-                    s = x.parent.right
-
-                if s.left.color == 0 and s.right.color == 0:
-                    s.color = 1
-                    x = x.parent
-                else:
-                    if s.right.color == 0:
-                        s.left.color = 0
-                        s.color = 1
-                        self.right_rotate(s)
-                        s = x.parent.right
-
-                    s.color = x.parent.color
-                    x.parent.color = 0
-                    s.right.color = 0
-                    self.left_rotate(x.parent)
-                    x = self.root
+        # find parent for new node
+        while current is not None:
+            parent = current
+            if order.price < current.price:
+                current = current.left
+            elif order.price > current.price:
+                current = current.right
             else:
-                s = x.parent.left
-                if s.color == 1:
-                    s.color = 0
-                    x.parent.color = 1
-                    self.right_rotate(x.parent)
-                    s = x.parent.left
+                current.orders[order.order_id] = order
+                return
 
-                if s.right.color == 0 and s.left.color == 0:
-                    s.color = 1
-                    x = x.parent
+        current_node = RedBlackNode(order=order, parent=parent)
+
+        if parent is None:
+            self.root = current_node
+            return
+
+        # set new node as child to the parent
+        while parent is not None:
+            if current_node.price < parent.price:
+                parent.left = current_node
+            else:
+                parent.right = current_node
+
+            # loop?
+            if parent.color == NodeColor.BLACK:
+                # insertion case 1: parent is black
+                return
+
+            grandparent = parent.parent
+
+            if grandparent is None:
+                # insertion case 4: parent is red and root
+                parent.color = NodeColor.BLACK
+                return
+
+            uncle = find_brother(node=parent)
+            if uncle is None or uncle.color == NodeColor.BLACK:
+                # insertion case 5 and 6: parent is red, uncle is black
+                if uncle is grandparent.right and current_node is parent.right:
+                    # insertion case 5: parent is red, uncle is black, current_node is right inner grandchild of grandparent
+                    self.__rotate_left(parent=parent)
+                    current_node = parent
+                    parent = grandparent.left
+                elif uncle is grandparent.left and current_node is parent.left:
+                    # insertion case 5: parent is red, uncle is black, current_node is left inner grandchild of grandparent
+                    self.__rotate_right(parent=parent)
+                    current_node = parent
+                    parent = grandparent.right
+
+                # insertion case 6: parent is red, uncle is black, current_node is outer grandchild of grandparent
+                if uncle is grandparent.right:
+                    self.__rotate_right(parent=grandparent)
                 else:
-                    if s.left.color == 0:
-                        s.right.color = 0
-                        s.color = 1
-                        self.left_rotate(s)
-                        s = x.parent.left
+                    self.__rotate_left(parent=grandparent)
+                parent.color = NodeColor.BLACK
+                grandparent.color = NodeColor.RED
 
-                    s.color = x.parent.color
-                    x.parent.color = 0
-                    s.left.color = 0
-                    self.right_rotate(x.parent)
-                    x = self.root
-        if x is not None:
-            x.color = 0
+                return
 
-    def __rb_transplant(self, u, v):
-        if u.parent == None:
-            self.root = v
-        elif u == u.parent.left:
-            u.parent.left = v
+            # insertion case 2: parent is red, uncle is red
+            parent.color = NodeColor.BLACK
+            uncle.color = NodeColor.BLACK
+            grandparent.color = NodeColor.RED
+            current_node = grandparent
+            parent = current_node.parent
+
+        # insertion case 3: current_node is root and red
+
+    def update(self, order: Order) -> None:
+        node_to_remove = find(node=self.root, price=order.price)
+        if node_to_remove is None:
+            raise RuntimeError(f"BLAX NODE NOT FOUND TO UPDATE price {order.price}")
+
+        node_to_remove.orders[order.order_id].size = order.size
+
+    def delete(self, order: Order) -> None:
+        # current_node = find(node=self.root, price=order.price)
+        # if current_node is None:
+        #     raise RuntimeError(f"BLAX NODE NOT FOUND TO REMOVE price {order.price}")
+
+        # if len(current_node.orders) > 1:
+        #     del current_node.orders[order.order_id]
+        #     return
+
+        # if (
+        #     current_node is self.root
+        #     and self.root.left is None
+        #     and self.root.right is None
+        # ):
+        #     # simple case: current_node is childless root
+        #     print(f"REMOVING {order.price} is childless root")
+        #     self.root = None
+        #     return
+
+        # if current_node.left is not None and current_node.right is not None:
+        #     print(f"REMOVING {order.price} has 2 children")
+        #     # simple case: current_node has 2 children
+        #     successor = minimal_node(current_node.right)
+        #     self.swap_nodes(current_node, successor)
+        #     if current_node is self.root:
+        #         self.root = successor
+
+        # if current_node.color == NodeColor.RED:
+        #     # simple case: current_node is red
+        #     # so at this point it cannot have any children and can just be removed
+        #     print(f"REMOVING {order.price} is RED, removing")
+        #     remove_node_from_parent(current_node)
+        #     return
+
+        # # simple case: current_node is black
+        # # it might have 1 red child or no children
+        # if current_node.left is not None:
+        #     print(f"REMOVING {order.price} BLACK and has left child, swapping")
+        #     self.swap_nodes(current_node, current_node.left)
+        #     if current_node is self.root:
+        #         self.root = current_node.left
+        # elif current_node.right is not None:
+        #     print(f"REMOVING {order.price} BLACK and has right child, swapping")
+        #     right = current_node.right
+        #     self.swap_nodes(current_node, current_node.right)
+        #     if current_node is self.root:
+        #         self.root = current_node.right
+        #     print(
+        #         f"current_node.right after swapping {right.price}, parent {right.parent}"
+        #     )
+        # print(
+        #     f"current_node after swapping {current_node.price}, parent {current_node.parent}"
+        # )
+
+        # # loop?
+        # # complex case: current_node is not root, is black and has no children
+        # parent = current_node.parent
+        # sibling = None
+
+        # direction_from_parent = "left" if parent.left is current_node else "right"
+        # if current_node is parent.left:
+        #     sibling = parent.right
+        # elif current_node is parent.right:
+        #     sibling = parent.left
+
+        # remove_node_from_parent(current_node)
+
+        # if sibling.color == NodeColor.RED:
+        #     # deletion case 3: sibling is red, so parent is black, and both nephews are black
+        #     if direction_from_parent == "left":
+        #         self.__rotate_left(parent=parent)
+        #     elif direction_from_parent == "right":
+        #         self.__rotate_right(parent=parent)
+        #     else:
+        #         raise RuntimeError("UNKNOWN DIRECTIOn")
+        #     parent.color = NodeColor.RED
+        #     sibling.color = NodeColor.BLACK
+
+        node_to_remove = find(node=self.root, price=order.price)
+        if node_to_remove is None:
+            raise RuntimeError(f"BLAX NODE NOT FOUND TO REMOVE price {order.price}")
+
+        if len(node_to_remove.orders) > 1:
+            del node_to_remove.orders[order.order_id]
+            return
+
+        # original_is_red = node_to_remove.red
+
+        if node_to_remove.left is None:
+            # right_child = node_to_remove.right
+            self.__transplant(parent=node_to_remove, child=node_to_remove.right)
+        elif node_to_remove.right is None:
+            self.__transplant(parent=node_to_remove, child=node_to_remove.left)
         else:
-            u.parent.right = v
-
-        if v is not None:
-            v.parent = u.parent
-
-    # Node deletion
-    def delete_node_helper(self, node, order: Order):
-        z = None
-        while node is not None:
-            if node.price == order.price:
-                z = node
-
-            if node.price <= order.price:
-                node = node.right
+            minimal_right = minimal_node(root=node_to_remove.right)
+            # minimal_right color
+            right_child_of_minimal_right = minimal_right.right
+            if minimal_right.parent is node_to_remove:
+                if right_child_of_minimal_right is not None:
+                    right_child_of_minimal_right.parent = minimal_right
             else:
-                node = node.left
+                self.__transplant(parent=minimal_right, child=minimal_right.right)
+                minimal_right.right = node_to_remove.right
+                minimal_right.right.parent = minimal_right
 
-        if z is None:
-            print("Cannot find price in the tree")
-            return
-
-        if len(z.orders) > 1:
-            del z.orders[order.order_id]
-            return
-
-        y = z
-        y_original_color = y.color
-        if z.left is None:
-            x = z.right
-            self.__rb_transplant(z, z.right)
-        elif z.right is None:
-            x = z.left
-            self.__rb_transplant(z, z.left)
-        else:
-            y = self.minimum(z.right)
-            y_original_color = y.color
-            x = y.right
-            if y.parent == z:
-                x.parent = y
-            else:
-                self.__rb_transplant(y, y.right)
-                y.right = z.right
-                y.right.parent = y
-
-            self.__rb_transplant(z, y)
-            y.left = z.left
-            y.left.parent = y
-            y.color = z.color
-        if y_original_color == 0:
-            self.delete_fix(x)
-
-    # Balance the tree after insertion
-    def fix_insert(self, k):
-        while k.parent.color == 1:
-            if k.parent == k.parent.parent.right:
-                u = k.parent.parent.left
-                if u is not None and u.color == 1:
-                    u.color = 0
-                    k.parent.color = 0
-                    k.parent.parent.color = 1
-                    k = k.parent.parent
-                else:
-                    if k == k.parent.left:
-                        k = k.parent
-                        self.right_rotate(k)
-                    k.parent.color = 0
-                    k.parent.parent.color = 1
-                    self.left_rotate(k.parent.parent)
-            else:
-                u = k.parent.parent.right
-
-                if u is not None and u.color == 1:
-                    u.color = 0
-                    k.parent.color = 0
-                    k.parent.parent.color = 1
-                    k = k.parent.parent
-                else:
-                    if k == k.parent.right:
-                        k = k.parent
-                        self.left_rotate(k)
-                    k.parent.color = 0
-                    k.parent.parent.color = 1
-                    self.right_rotate(k.parent.parent)
-            if k == self.root:
-                break
-        self.root.color = 0
-
-    def __print_helper(self, node: Node, level=0):
-        if node is None:
-            return
-        self.__print_helper(node.left, level + 1)
-        print(
-            "-" * 4 * level + ">" + str(node.price) + ("R" if node.color == 1 else "B")
-        )
-        self.__print_helper(node.right, level + 1)
-
-    def preorder(self):
-        self.pre_order_helper(self.root)
-
-    def inorder(self):
-        self.in_order_helper(self.root)
-
-    def postorder(self):
-        self.post_order_helper(self.root)
-
-    def searchTree(self, k):
-        return self.search_tree_helper(self.root, k)
-
-    def minimum(self, node):
-        while node.left is not None:
-            node = node.left
-        return node
-
-    def maximum(self, node):
-        while node.right is not None:
-            node = node.right
-        return node
+            self.__transplant(parent=node_to_remove, child=minimal_right)
+            minimal_right.left = node_to_remove.left
+            minimal_right.left.parent = minimal_right
+            minimal_right.color = node_to_remove.color
 
     def get_minimum(self) -> float:
-        if self.root is None:
-            return 0.0
-
-        min_node = self.minimum(node=self.root)
+        min_node = minimal_node(root=self.root)
 
         if min_node is None:
             return 0.0
@@ -236,114 +228,214 @@ class RedBlackTree:
         return min_node.price
 
     def get_maximum(self) -> float:
-        if self.root is None:
-            return 0.0
-
-        max_node = self.maximum(node=self.root)
+        max_node = maximal_node(root=self.root)
 
         if max_node is None:
             return 0.0
 
         return max_node.price
 
-    def successor(self, x):
-        if x.right is not None:
-            return self.minimum(x.right)
-
-        y = x.parent
-        while y is not None and x == y.right:
-            x = y
-            y = y.parent
-        return y
-
-    def predecessor(self, x):
-        if x.left is not None:
-            return self.maximum(x.left)
-
-        y = x.parent
-        while y is not None and x == y.left:
-            x = y
-            y = y.parent
-
-        return y
-
-    def left_rotate(self, x):
-        y = x.right
-        x.right = y.left
-        if y.left is not None:
-            y.left.parent = x
-
-        y.parent = x.parent
-        if x.parent == None:
-            self.root = y
-        elif x == x.parent.left:
-            x.parent.left = y
+    def __transplant(self, parent, child):
+        if parent.parent is None:
+            self.root = child
+        elif parent is parent.parent.left:
+            parent.parent.left = child
         else:
-            x.parent.right = y
-        y.left = x
-        x.parent = y
+            parent.parent.right = child
 
-    def right_rotate(self, x):
-        y = x.left
-        x.left = y.right
-        if y.right is not None:
-            y.right.parent = x
+        if child is not None:
+            child.parent = parent.parent
 
-        y.parent = x.parent
-        if x.parent == None:
-            self.root = y
-        elif x == x.parent.right:
-            x.parent.right = y
-        else:
-            x.parent.left = y
-        y.right = x
-        x.parent = y
+    def __rotate_left(self, parent: RedBlackNode) -> RedBlackNode:
+        grandparent = parent.parent
+        new_subtree_root = parent.right
+        if new_subtree_root is None:
+            raise RuntimeError("NEW SUBTREE ROOT SHOULD BE TRUE NODE")
 
-    def insert(self, order: Order):
-        node = Node(order=order)
+        child = new_subtree_root.left
 
-        y = None
-        x = self.root
+        parent.right = child
+        if child is not None:
+            child.parent = parent
 
-        while x is not None:
-            y = x
-            if node.price < x.price:
-                x = x.left
-            elif node.price > x.price:
-                x = x.right
+        new_subtree_root.left = parent
+        parent.parent = new_subtree_root
+        new_subtree_root.parent = grandparent
+
+        if grandparent is not None:
+            if grandparent.left is parent:
+                grandparent.left = new_subtree_root
             else:
-                x.orders[order.order_id] = order
-                return
-
-        node.parent = y
-        if y == None:
-            self.root = node
-        elif node.price < y.price:
-            y.left = node
+                grandparent.right = new_subtree_root
         else:
-            y.right = node
+            self.root = new_subtree_root
 
-        if node.parent == None:
-            node.color = 0
-            return
+        return new_subtree_root
 
-        if node.parent.parent == None:
-            return
+    def __rotate_right(self, parent: RedBlackNode) -> RedBlackNode:
+        grandparent = parent.parent
+        new_subtree_root = parent.left
+        if new_subtree_root is None:
+            raise RuntimeError("NEW SUBTREE ROOT SHOULD BE TRUE NODE")
 
-        self.fix_insert(node)
+        child = new_subtree_root.right
 
-    def get_root(self):
-        return self.root
+        parent.left = child
+        if child is not None:
+            child.parent = parent
 
-    def delete(self, order: Order):
-        self.delete_node_helper(self.root, order=order)
+        new_subtree_root.right = parent
+        parent.parent = new_subtree_root
+        new_subtree_root.parent = grandparent
 
-    def update(self, order: Order) -> None:
-        node_to_remove = self.search_tree_helper(node=self.root, price=order.price)
-        if node_to_remove is None:
-            raise RuntimeError(f"BLAX NODE NOT FOUND TO UPDATE price {order.price}")
+        if grandparent is not None:
+            if grandparent.right is parent:
+                grandparent.right = new_subtree_root
+            else:
+                grandparent.left = new_subtree_root
+        else:
+            self.root = new_subtree_root
 
-        node_to_remove.orders[order.order_id].size = order.size
+        return new_subtree_root
 
-    def print_tree(self):
-        self.__print_helper(node=self.root)
+    def swap_nodes(self, first: RedBlackNode, second: RedBlackNode, /) -> None:
+        print("SWAP NODES")
+        if first is second.parent:
+            print("SWAP NODES -- first is parent of second")
+            swap_parent_and_child(parent=first, child=second)
+        elif second is first.parent:
+            print("SWAP NODES -- second is parent of first")
+            swap_parent_and_child(parent=second, child=first)
+        else:
+            if first.parent is not None:
+                if first is first.parent.left:
+                    first.parent.left = second
+                else:
+                    first.parent.right = second
+
+            if second.parent is not None:
+                if second is second.parent.left:
+                    second.parent.left = first
+                else:
+                    second.parent.right = first
+
+            first.parent, second.parent = second.parent, first.parent
+            first.color, second.color = second.color, first.color
+            first.left, second.left = second.left, first.left
+            first.right, second.right = second.right, first.right
+
+            if first.left is not None:
+                first.left.parent = first
+            if first.right is not None:
+                first.right.parent = first
+
+            if second.left is not None:
+                second.left.parent = second
+            if second.right is not None:
+                second.right.parent = second
+
+        if self.root is first:
+            self.root = second
+        elif self.root is second:
+            self.root = first
+
+    def print_tree(self) -> None:
+        print_tree(root=self.root)
+
+
+def find(node: RedBlackNode, price: float) -> RedBlackNode:
+    if node is None or math.isclose(node.price, price):
+        return node
+
+    if node.price < price:
+        return find(node=node.right, price=price)
+
+    return find(node=node.left, price=price)
+
+
+def find_brother(node) -> RedBlackNode:
+    if node is None or node.parent is None:
+        return None
+
+    parent = node.parent
+    return parent.left if node is parent.right else parent.right
+
+
+def minimal_node(root) -> RedBlackNode:
+    if root is None:
+        return None
+
+    current = root
+    while current.left is not None:
+        current = current.left
+
+    return current
+
+
+def maximal_node(root) -> RedBlackNode:
+    if root is None:
+        return None
+
+    current = root
+    while current.right is not None:
+        current = current.right
+
+    return current
+
+
+def print_tree(root: RedBlackNode, level=0):
+    if root is not None:
+        print_tree(root.left, level + 1)
+        print(
+            "-" * 4 * level
+            + ">"
+            + str(root.price)
+            + ("R" if root.color == NodeColor.RED else "B")
+        )
+        print_tree(root.right, level + 1)
+
+
+def swap_parent_and_child(*, parent: RedBlackNode, child: RedBlackNode) -> None:
+    if child is parent.right:
+        print("child is right of parent")
+        child_right = child.right
+        print(f"child has right: {child_right}")
+        child.right = parent
+        print(f"child should have parent as right: {child.right}")
+        parent.right = child_right
+        print(f"parent should have None as right: {parent.right}")
+
+        if parent.right is not None:
+            parent.right.parent = parent
+        parent.left, child.left = child.left, parent.left
+    elif child is parent.left:
+        print("child is left of parent")
+        child_left = child.left
+        child.left = parent
+        parent.left = child_left
+
+        if parent.left is not None:
+            parent.left.parent = parent
+        parent.right, child.right = child.right, parent.right
+    else:
+        raise RuntimeError("NOT PARENT AND CHILD RELATION")
+
+    print(f"parent should have None as right: {parent.right}")
+
+    grandparent = parent.parent
+    parent.parent = child
+    child.parent = grandparent
+    parent.color, child.color = child.color, parent.color
+
+    print(f"parent {parent.price} has left: {parent.left} and right: {parent.right}")
+    print(f"child {child.price} has left: {child.left} and right: {child.right}")
+
+
+def remove_node_from_parent(node: RedBlackNode, /) -> None:
+    if node.parent is None:
+        return
+
+    if node is node.parent.left:
+        node.parent.left = None
+    elif node is node.parent.right:
+        node.parent.right = None
