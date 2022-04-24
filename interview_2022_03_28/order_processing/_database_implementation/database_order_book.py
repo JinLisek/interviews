@@ -1,7 +1,7 @@
-from .best_bid_and_ask_view import BestBidAndAskView
+from ..best_bid_and_ask_view import BestBidAndAskView
+from ..order import Order, OrderType
+from ..order_book import OrderBookError, OrderBookProcessor
 from .concrete_order_database import OrderDatabase
-from .order import Order, OrderType
-from .order_book import OrderBookError, OrderBookProcessor
 
 
 class OrderDoesNotExistError(OrderBookError):

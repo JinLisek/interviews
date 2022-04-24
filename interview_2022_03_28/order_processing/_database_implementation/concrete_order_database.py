@@ -1,7 +1,7 @@
 import sqlite3
 from typing import List
 
-from .order import Order
+from ..order import Order
 from .order_database import OrderDatabase
 
 

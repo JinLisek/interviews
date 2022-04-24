@@ -1,6 +1,6 @@
+from ..order_storage import OrderStorage
 from .concrete_order_database import ConcreteOrderDatabase
 from .database_order_storage import DatabaseOrderStorage
-from .order_storage import OrderStorage
 
 
 def create_db_order_storage() -> OrderStorage:

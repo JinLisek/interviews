@@ -1,6 +1,6 @@
 import pytest
 
-from ..process_order import process_order
+from ...process_order import process_order
 
 CORRECT_ORDER_ID = "bid1"
 

@@ -1,6 +1,6 @@
 import re
 
-from ..process_order import process_order
+from ...process_order import process_order
 
 
 def test_cancelling_order_with_empty_database_should_not_add_orders(

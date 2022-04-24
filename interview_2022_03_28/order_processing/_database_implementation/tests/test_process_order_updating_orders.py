@@ -1,6 +1,6 @@
 import re
 
-from ..process_order import process_order
+from ...process_order import process_order
 
 
 def test_given_empty_database_updating_order_should_not_add_orders(
