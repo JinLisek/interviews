@@ -4,9 +4,9 @@ import math
 from enum import Enum, auto, unique
 from typing import Dict, Optional
 
-from .best_bid_and_ask_view import BestBidAndAskView
-from .order import Order, OrderType
-from .order_book import OrderBookError, OrderBookProcessor
+from ..best_bid_and_ask_view import BestBidAndAskView
+from ..order import Order, OrderType
+from ..order_book import OrderBookError, OrderBookProcessor
 
 
 class OrderDoesNotExistError(OrderBookError):

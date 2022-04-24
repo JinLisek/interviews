@@ -1,7 +1,7 @@
 import pytest
 
-from ..best_bid_and_ask import get_best_bid_and_ask
-from ..order import Order, OrderType
+from ...best_bid_and_ask import get_best_bid_and_ask
+from ...order import Order, OrderType
 from ..tree_order_book import TreeOrderBook
 
 

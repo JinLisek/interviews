@@ -1,7 +1,7 @@
 import pytest
 
-from ..order import Order, OrderType
-from ..process_order import process_order
+from ...order import Order, OrderType
+from ...process_order import process_order
 from ..tree_order_book import TreeOrderBook
 
 CORRECT_ORDER_ID = "bid1"
