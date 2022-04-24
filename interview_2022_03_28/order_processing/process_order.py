@@ -67,7 +67,7 @@ def _handle_add_action(order_book: OrderBookProcessor, order: str) -> None:
         order_id=order_id,
         timestamp=timestamp,
         ticker=ticker,
-        price=float(price),
+        price=round(float(price), ndigits=5),
         size=int(size),
         order_type=order_type,
     )
