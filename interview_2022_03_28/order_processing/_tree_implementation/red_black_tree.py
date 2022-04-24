@@ -5,6 +5,15 @@ from enum import Enum, auto, unique
 from typing import Optional
 
 from ..order import Order
+from ..order_book import OrderBookError
+
+
+class NodeNotFoundInTree(OrderBookError):
+    pass
+
+
+class OrderNotFoundInNodeOrders(OrderBookError):
+    pass
 
 
 @unique
@@ -105,11 +114,13 @@ class RedBlackTree:
     def update(self, order: Order) -> None:
         node_to_update = find(node=self.root, price=order.price)
         if node_to_update is None:
-            raise RuntimeError(f"BLAX NODE NOT FOUND TO UPDATE price {order.price}")
+            raise NodeNotFoundInTree(
+                f"Cannot update size of nonexistent order: {order.order_id} with price: {order.price}"
+            )
 
         if order.order_id not in node_to_update.orders:
-            raise RuntimeError(
-                f"BLAX order id: {order.order_id} not found in orders for node with price {order.price}, orders: {node_to_update.orders}"
+            raise OrderNotFoundInNodeOrders(
+                f"Cannot update size of nonexistent order: {order.order_id} with price {order.price}"
             )
 
         node_to_update.orders[order.order_id].size = order.size
@@ -194,7 +205,9 @@ class RedBlackTree:
 
         node_to_remove = find(node=self.root, price=order.price)
         if node_to_remove is None:
-            raise RuntimeError(f"BLAX NODE NOT FOUND TO REMOVE price {order.price}")
+            raise NodeNotFoundInTree(
+                f"Cannot remove nonexistent order: {order.order_id} with price: {order.price}"
+            )
 
         if len(node_to_remove.orders) > 1:
             del node_to_remove.orders[order.order_id]
