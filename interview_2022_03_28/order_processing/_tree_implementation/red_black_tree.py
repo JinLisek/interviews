@@ -136,29 +136,110 @@ class RedBlackTree:
             del node_to_remove.orders[order.order_id]
             return
 
-        # original_is_red = node_to_remove.red
+        current_node = node_to_remove
+        current_node_original_color = current_node.color
 
         if node_to_remove.left is None:
-            # right_child = node_to_remove.right
+            child = node_to_remove.right
             self.__transplant(parent=node_to_remove, child=node_to_remove.right)
         elif node_to_remove.right is None:
+            child = node_to_remove.left
             self.__transplant(parent=node_to_remove, child=node_to_remove.left)
         else:
-            minimal_right = minimal_node(root=node_to_remove.right)
-            # minimal_right color
-            right_child_of_minimal_right = minimal_right.right
-            if minimal_right.parent is node_to_remove:
-                if right_child_of_minimal_right is not None:
-                    right_child_of_minimal_right.parent = minimal_right
+            current_node = minimal_node(root=node_to_remove.right)
+            current_node_original_color = current_node.color
+            child = current_node.right
+            if current_node.parent is node_to_remove:
+                if child is not None:
+                    child.parent = current_node
             else:
-                self.__transplant(parent=minimal_right, child=minimal_right.right)
-                minimal_right.right = node_to_remove.right
-                minimal_right.right.parent = minimal_right
+                self.__transplant(parent=current_node, child=current_node.right)
+                current_node.right = node_to_remove.right
+                current_node.right.parent = current_node
 
-            self.__transplant(parent=node_to_remove, child=minimal_right)
-            minimal_right.left = node_to_remove.left
-            minimal_right.left.parent = minimal_right
-            minimal_right.color = node_to_remove.color
+            self.__transplant(parent=node_to_remove, child=current_node)
+            current_node.left = node_to_remove.left
+            current_node.left.parent = current_node
+            current_node.color = node_to_remove.color
+
+        if current_node_original_color == NodeColor.BLACK:
+            self.fix_delete(node=child)
+
+    def fix_delete(self, node: RedBlackNode) -> None:
+        while (
+            node is not None and node is not self.root and node.color == NodeColor.BLACK
+        ):
+            if node is node.parent.left:
+                sibling = node.parent.right
+                if sibling is not None and sibling.color == NodeColor.RED:
+                    sibling.color = NodeColor.BLACK
+                    node.parent.color = NodeColor.RED
+                    self.__rotate_left(parent=node.parent)
+                    sibling = node.parent.right
+                if (
+                    sibling is not None
+                    and (sibling.left is None or sibling.left.color == NodeColor.BLACK)
+                    and (
+                        sibling.right is None or sibling.right.color == NodeColor.BLACK
+                    )
+                ):
+                    sibling.color = NodeColor.RED
+                    node = node.parent
+                else:
+                    if (
+                        sibling is not None
+                        and sibling.right is not None
+                        and sibling.right.color == NodeColor.BLACK
+                    ):
+                        sibling.left.color = NodeColor.BLACK
+                        sibling.color = NodeColor.RED
+                        self.__rotate_right(parent=sibling)
+                        sibling = node.parent.right
+
+                    if sibling is not None:
+                        sibling.color = node.parent.color
+                        if sibling.right is not None:
+                            sibling.right.color = NodeColor.BLACK
+                    node.parent.color = NodeColor.BLACK
+                    self.__rotate_left(parent=node.parent)
+                    node = self.root
+            else:
+                sibling = node.parent.left
+                if sibling is not None and sibling.color == NodeColor.RED:
+                    sibling.color = NodeColor.BLACK
+                    node.parent.color = NodeColor.RED
+                    self.__rotate_right(parent=node.parent)
+                    sibling = node.parent.left
+
+                if (
+                    sibling is not None
+                    and (sibling.left is None or sibling.left.color == NodeColor.BLACK)
+                    and (
+                        sibling.right is None or sibling.right.color == NodeColor.BLACK
+                    )
+                ):
+                    sibling.color = NodeColor.RED
+                    node = node.parent
+                else:
+                    if (
+                        sibling is not None
+                        and sibling.left is not None
+                        and sibling.left.color == NodeColor.BLACK
+                    ):
+                        sibling.right.color = NodeColor.BLACK
+                        sibling.color = NodeColor.RED
+                        self.__rotate_left(parent=sibling)
+                        sibling = node.parent.left
+
+                    if sibling is not None:
+                        sibling.color = node.parent.color
+                        if sibling.left is not None:
+                            sibling.left.color = NodeColor.BLACK
+                    node.parent.color = NodeColor.BLACK
+                    self.__rotate_right(parent=node.parent)
+                    node = self.root
+        if node is not None:
+            node.color = NodeColor.BLACK
 
     def get_minimum(self) -> float:
         min_node = minimal_node(root=self.root)
@@ -187,11 +268,11 @@ class RedBlackTree:
         if child is not None:
             child.parent = parent.parent
 
-    def __rotate_left(self, parent: RedBlackNode) -> RedBlackNode:
+    def __rotate_left(self, parent: RedBlackNode) -> None:
         grandparent = parent.parent
         new_subtree_root = parent.right
         if new_subtree_root is None:
-            raise RuntimeError("NEW SUBTREE ROOT SHOULD BE TRUE NODE")
+            return
 
         child = new_subtree_root.left
 
@@ -211,13 +292,11 @@ class RedBlackTree:
         else:
             self.root = new_subtree_root
 
-        return new_subtree_root
-
-    def __rotate_right(self, parent: RedBlackNode) -> RedBlackNode:
+    def __rotate_right(self, parent: RedBlackNode) -> None:
         grandparent = parent.parent
         new_subtree_root = parent.left
         if new_subtree_root is None:
-            raise RuntimeError("NEW SUBTREE ROOT SHOULD BE TRUE NODE")
+            return
 
         child = new_subtree_root.right
 
@@ -236,8 +315,6 @@ class RedBlackTree:
                 grandparent.left = new_subtree_root
         else:
             self.root = new_subtree_root
-
-        return new_subtree_root
 
     def swap_nodes(self, first: RedBlackNode, second: RedBlackNode, /) -> None:
         print("SWAP NODES")
